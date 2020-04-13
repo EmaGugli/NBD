@@ -1,0 +1,80 @@
+\documentclass[a4paper,12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsfonts}
+\usepackage{amsmath}
+\usepackage[margin=0.6in]{geometry}
+% Title Page
+\title{Challange 1: topology design}
+\author{}
+%\pagestyle{headings}
+%
+\begin{document}
+
+\section{Connectivity}
+\clearpage
+
+\section{Traffic model and throughput}
+In this part of the assignement we compare the throughput bound of the Fat-tree topology with that of a random (i.e. Jellyfish) topology having the same equipment. 
+Let $N$ denote the number of servers, $S$ the number of $n$-ports switches and $L$ the number of biderectional links of the network.
+
+\begin{enumerate}
+ \item Once $n$ is fixed, the values of $N$, $S$ and $L$ are can be immediately derived from the properties of the Fat-tree topology.
+ Specifically, they can be written as functions of $n$ as follows:
+ $$ N = \frac{n^3}{4}\qquad\qquad S=\frac{5}{4}n^2 \qquad\qquad L = 3N =\frac{3}{4}n^3  $$
+ In the Jellyfish topology the number $r$ of switch ports to be connected to other switches is involved in the inequalitiy $N \leq S(n-r)$.
+ Therefore, assuming the network to be equipped with the maximum possible number of servers, we derive the following for $r$:
+ $$ r = n-\frac{N}{S} = n-\frac{n^3}{4}\frac{4}{5n^2}=n-\frac{n}{5} = \frac{4}{5}n$$.
+ Notice that this choice of $r$ also leads to same number of links of Fat-tree:
+ $$ L_J = \frac{Sr}{2} = \frac{1}{2}\cdot\frac{5}{4}n^2\cdot\frac{4}{5}n = \frac{3}{4}n^3 = L_{FT} = L$$.
+ We also check that this value of $r$ satisfies the requirement of a general $r$-regular graph: 
+ \begin{itemize}
+  \item $r<S$ : $\frac{4}{5}n <\frac{5}{4}n^2 \Leftrightarrow n > \lceil\frac{16}{25}] = 1$
+  \item the product $rS$ is even, i.e. $rS=2k$ for some $k\in \mathbb{N}$
+  \end{itemize}
+
+  \item We can now write the expression for the application-oblivious throughput bound \textit{TH} for an all-to-all traffic matrix as a function of $n$ and of the average shortest path length $\overline{h}$.
+  In particular, we have that:
+  \begin{itemize}
+   \item $\ell = L = 3N = \frac{3}{4}n^3$
+   \item $\nu_f = \binom{N}{2} =\frac{N(N-1)}{2} = \frac{n^3}{8}(\frac{n^3}{4}-1) = \frac{n^3(n^3-4)}{32} $
+  \end{itemize}
+ Therefore, substituting in the general formula we get the following:
+ $$ TH = TH(n,\overline{h}) \leq \frac{\ell}{\overline{h}\mu_f}= \frac{6}{\overline{h} (N-1)} = \frac{24}{\overline{h}(n^3-4)}. $$
+
+ \item Finally, we compare numerically the bound on \textit{TH} in both topologies for $n =5\ell, \;\ell = 1,\ldots,10$. 
+ In the case of the Fat-tree topology, we can use the exact value of $\overline{h}$, which is given by:
+ \begin{gather*} 
+  \overline{h} = \frac{1}{\nu_f}\sum_{1=1}^{\nu_f}h_i = \bigg (2\bigg[\frac{n^3}{8}\bigg(\frac{n}{2}-1\bigg)\bigg] + 4\bigg[\frac{n^4}{16}\bigg(\frac{n}{2}-1\bigg)\bigg] + 6\bigg[\frac{n^5}{32}(n-1)\bigg] = \bigg )\frac{1}{\nu_f} =\\
+  = 2\cdot\frac{3n^3-n^2-2n-4}{n^3-4}.
+ \end{gather*}
+ Instead, in order to estimate the lower bound on $\overline{h}$ in the case of the $r$-regular random graph, we first have to calculate these quantities:
+ $$ K = K(n) = 1+ \bigg\lfloor \frac{\log(N-\frac{2(N-1)}{r})}{\log(r-1)}\bigg\rfloor =
+ 1+ \bigg\lfloor \frac{\log(\frac{10n^3-25n^2-20}{8n})}{\log(\frac{4n-5}{5})}\bigg\rfloor $$
+ 
+ $$ R = R(n, K) = N-1-\sum_{j=1}^{K-1}r(r-1)^{j-1} = \frac{5}{4}n^2-1-\sum_{j=1}^{K-1}\frac{4n}{5}\bigg(\frac{4n}{5}-1\bigg)^{j-1}$$
+ 
+ Thus, from a known result we get the lower bound: $ \overline{h} \geq \frac{\sum_{j=1}^{K-1}j \frac{4n}{5}(\frac{4n}{5}-1)^{j-1}+Kr}{\frac{5}{4}n^2-1}$
+  
+ 
+ Our results are summarized in the following table, where both \textit{ TH\textsubscript{FT}} and \textit{ TH\textsubscript{J}} are intended to be upper bound on the traffic flow:
+ \begin{center}
+\begin{tabular}{ |c|c|c|c|c|c|} 
+ \hline
+ \it n & \it N & \it S & \it L & \it TH\textsubscript{FT} & \it TH\textsubscript{J}\\
+ \hline
+ 5 & 31.25 & 31.25 & 93.75 & 0.03571 & 0.05621\\
+ 10 & 250 & 125 & 750 & 0.00417 & 0.00638\\
+ 15 & 843.75 & 281.25 & 2531.25 & 0.00122 & 0.00185\\
+ 20 & 2000 & 500 & 6000 & 0.00051 & 0.00077\\
+ 25 & 3906.25 & 781.25 & 11718.75 & 0.00026 & 0.00039\\
+ 30 & 6750 & 1125 & 20250 & 0.00015 & 0.00023\\
+ 35 & 10718 & 1531.25 & 32156.35 & 9e-05 & 0.00014\\
+ 40 & 16000 & 2000 & 48000 & 6e-05 & 9e-05\\
+ 45 & 22781.25 & 2531.25 & 68343.75 & 4e-05 & 7e-05\\
+ 50 & 31250 & 3125 & 93750 &3e-05 & 5e-05\\
+ \hline
+\end{tabular}
+\end{center}
+What we learn from the table above is that the Jellyfish topology supports more flows at high throughput thanks to its average shortest path length.
+\end{enumerate}
+ \end{document}          
