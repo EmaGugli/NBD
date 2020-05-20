@@ -9,7 +9,6 @@ import matplotlib.pylab as plt
 n = 100000 # number of samples
 Nse= 20 # number of servers
 # for jj in range(1,N + 1)
-start_time = time.time()
 T0 = 1 # unit time 
 Ymed = 10 # mean of Y
 q  = 3/5 # probability
@@ -32,7 +31,9 @@ alfa = 1/2
 def update_status(thr, idList, queueLengths):
     s1, s2, s3 = [server for server in sample(range(Nse), 3)] # select 3 servers at random          
     thr = min(queueLengths[s1], queueLengths[s1], queueLengths[s1])  # take the shortest queue as new threashold
-    idList = [server for server in range(1,21) if queueLengths[i+1] < thr]  # update idList with the indexes of the servers having queue length shorter than the threashold
+    if thr == 0:
+        thr = 1
+    idList = [server for server in range(1,21) if queueLengths[server-1] < thr]  # update idList with the indexes of the servers having queue length shorter than the threashold
     return thr, idList
 
 def JBTd(queue, idList):
@@ -50,15 +51,10 @@ for rho in np.arange(0.8, 1, 0.02): # THE RANGE FUNCTION DOESNT WORK FOR DECIMAL
     EX = rho*Nse*ET # calculate the ex according to rho
     beta = EX/math.gamma(1+(1/alfa)) # beta accordinng to ex
     Xv = []
-    for i in range(n):
-        Xv.append(max(1,min(100*EX,round(beta*(-math.log(R3[i]))**(1/alfa))))) # simulations of Xv 
-    #matrix = [1 for i in range(20)]
-    #total waiting time
     wt = 0 # delay
     queue = defaultdict(int) # waiting time at server i
     for i in range(1,21):
         queue[i] = 0
-    jc = 0 # job counter
     time = 0 # time counter
     thr = 1 # starting threshold
     idList = [i for i in range(1,21)] # list of server's Ids whose queue is below the threashold (all of them at the beginning since they all start empty)
@@ -66,22 +62,22 @@ for rho in np.arange(0.8, 1, 0.02): # THE RANGE FUNCTION DOESNT WORK FOR DECIMAL
     idTasksForQueue = defaultdict(int) # store job id
     for i in range(1,21):
         idTasksForQueue[i] = []
-    print(queueLengths)   
-    while True:
-        if (jc == n ): # or all(value == 0 for value in queue.values())):
-            break # when the network is empty 
+            
+    """ Start simulating for the given rho """
+    for jc in range(n):
+        Xv.append(max(1,min(100*EX,round(beta*(-math.log(R3[jc]))**(1/alfa))))) # simulations of Xv 
         
         time += Tv[jc] # add the time that pass when there was not arrivals
         
-        # EVery 1000 time units update the threshold and the idList in the dispatcher
-        if time % 1000 == 0:
+        # EVery 100 events update the threshold and the idList in the dispatcher
+        if jc % 100 == 0:
             thr, idList = update_status(thr, idList, queueLengths)
         
         for i in range(1,Nse+1):
-            queue[i] -= Tv[jc]
+            queue[i] -= Tv[jc]         
             if len(idTasksForQueue[i]) > 0: # remove from the queue all the tasks that are already compleated
                 task = idTasksForQueue[i][0]
-                while (time - Xv[task] > 0):
+                while (Tv[jc] - Xv[task] > 0):
                     idTasksForQueue[i] = idTasksForQueue[i][1:]
                     queueLengths[i-1] -= 1
                     task = idTasksForQueue[0]               
