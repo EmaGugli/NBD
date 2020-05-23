@@ -5,10 +5,10 @@ import numpy as np
 import matplotlib.pylab as plt
 import pandas as pd 
 import seaborn as sns; sns.set()
-
+import scipy
+import statistics
 n = 100000 # number of samples
 Nse= 20 # number of servers
-# for jj in range(1,N + 1)
 T0 = 1 # unit time 
 Ymed = 10 # mean of Y
 q  = 3/5 # probability
@@ -79,7 +79,7 @@ def delay(rho):
     EX = rho*Nse*ET # calculate E[X] according to rho
     beta = EX/math.gamma(1+(1/alfa)) # beta accordinng to ex
     Xv = []
-    wtJSQ, wtMyAlgo = 0, 0
+    wtJSQ, wtMyAlgo = [], []
     time = 0   
     queuesJSQ = OrderedDict([(i, OrderedDict()) for i in range(1,21)])
     
@@ -102,34 +102,35 @@ def delay(rho):
         serverJSQ = JSQ(queuesJSQ) # assign the job jc to a server in [1,20]
         startJobJSQ = addJob(serverJSQ, queuesJSQ, time, jc, Xv)       
         startVecJSQ.append(startJobJSQ)
-        wtJSQ += startJobJSQ + Xv[jc] - time    
+        wtJSQ.append(startJobJSQ + Xv[jc] - time)    
         
         serverMyAlgo = myAlgo(queueMyAlgoTime, x) # return server number
         queueMyAlgoTime[serverMyAlgo] += x
-        wtMyAlgo += queueMyAlgoTime[serverMyAlgo]
+        wtMyAlgo.append(queueMyAlgoTime[serverMyAlgo])
         
         time += Tv[jc] 
     return wtJSQ, wtMyAlgo, queueMyAlgoTime, Xv
 
-delayJSQ = defaultdict() 
-delayMyAlgo = defaultdict() 
+delayJSQ, delayMyAlgo = defaultdict(), defaultdict() 
 rho_vec = np.linspace(0.8,0.99,10)
 for rho in rho_vec:
     rho = round(rho,2) 
     wtJSQ, wtMyAlgo, queueMyAlgoTime, Xv = delay(rho)   
-    delayJSQ[rho] = wtJSQ/n
-    delayMyAlgo[rho] = wtMyAlgo/n
+    delayJSQ[rho] = (np.mean(wtJSQ), scipy.stats.sem(wtJSQ)*scipy.stats.t.ppf((1 + 0.95) / 2., n-1)) 
+    delayMyAlgo[rho] = (np.mean(wtMyAlgo), scipy.stats.sem(wtMyAlgo)* scipy.stats.t.ppf((1 + 0.95) / 2., n-1))
     
-listJSQ = sorted(delayJSQ.items()) # sorted by key, return a list of tuples
-dfJSQ = pd.DataFrame(listJSQ, columns =['Rho', 'ED']) 
-ax = sns.lineplot(x="Rho", y="ED", data=dfJSQ)
+dfJSQ = pd.DataFrame.from_dict(delayJSQ, orient='index', columns =['ED', 'ERR'])
+plt.plot(dfJSQ.index, dfJSQ['ED'], marker='o', markerfacecolor='blue', markersize=8, color='skyblue', linewidth=2, label = 'JSQ')
+#ax = sns.lineplot(x="Rho", y="ED", data=dfJSQ)
+#plt.errorbar(dfJSQ['Rho'], dfJSQ['ED'], yerr=dfJSQ['ERR'], fmt='o', color='black',
+#             ecolor='lightgray', elinewidth=3, capsize=0);
 
-listMyAlgo = sorted(delayMyAlgo.items()) # sorted by key, return a list of tuples
-df = pd.DataFrame(listMyAlgo, columns =['Rho', 'ED']) 
-ax = sns.lineplot(x="Rho", y="ED", data=df)
+df = pd.DataFrame.from_dict(delayMyAlgo, orient='index', columns =['ED', 'ERR'])
+plt.plot(df.index, df['ED'], marker='*', markerfacecolor='red', markersize=10, color='orange', linewidth=2, label = 'New policy')
+#plt.errorbar(df['Rho'], df['ED'], yerr=df['ERR'], fmt='o', color='red',ecolor='lightgray', elinewidth=3, capsize=0);
 
-plt.title('Mean system time comparison for load balancing system algorithms')
-plt.xlabel("Load (rho)")
+plt.title('Mean system time comparison: \n JSQ vs our new policy')
+plt.xlabel(r'Load coefficient $\rho$')
 plt.ylabel("Mean system time")
 plt.legend()
 plt.show()
